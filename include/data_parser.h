@@ -5,5 +5,5 @@
 
 class DataParser {
 public:
-    static std::vector<std::string> parseCSV(const std::string& filepath);
+    static std::vector<std::vector<std::string>> parseCSV(const std::string& filepath);
 };

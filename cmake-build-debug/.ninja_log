@@ -5,3 +5,6 @@
 5	53	7548200523933068	CMakeFiles/F1Visualizer.dir/src/data_parser.cpp.obj	2bf2fc784bbdbc0
 4	478	7548201894815672	CMakeFiles/F1Visualizer.dir/src/main.cpp.obj	f0322ca4be9062ec
 478	578	7548201899553041	F1Visualizer.exe	c6a88e113f51ed56
+5	604	7548207719921450	CMakeFiles/F1Visualizer.dir/src/main.cpp.obj	f0322ca4be9062ec
+9	718	7548207719951443	CMakeFiles/F1Visualizer.dir/src/data_parser.cpp.obj	2bf2fc784bbdbc0
+718	849	7548207727047341	F1Visualizer.exe	c6a88e113f51ed56
