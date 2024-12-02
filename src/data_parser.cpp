@@ -1,30 +1,25 @@
-#include "data_parser.h"
 #include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
 
-std::vector<std::vector<std::string>> DataParser::parseCSV(const std::string& filepath) {
-    std::vector<std::vector<std::string>> data;
-    std::ifstream file(filepath);
+int main() {
+    std::ifstream input("input.txt");
+    std::ofstream output("output.txt");
 
-    if (!file.is_open()) {
-        throw std::runtime_error("Could not open file: " + filepath);
+    if (!input.is_open() || !output.is_open()) {
+        std::cerr << "Error opening input or output file." << std::endl;
+        return 1;
     }
 
     std::string line;
-    while (std::getline(file, line)) {
-        std::vector<std::string> row;
-        std::stringstream ss(line);
-        std::string cell;
-
-        while (std::getline(ss, cell, ',')) {
-            row.push_back(cell);
-        }
-        data.push_back(row);
+    output << "Processed Data:\n";
+    while (std::getline(input, line)) {
+        output << "-> " << line << std::endl;
     }
 
-    file.close();
-    return data;
+    input.close();
+    output.close();
+
+    std::cout << "C++ program executed successfully." << std::endl;
+    return 0;
 }
