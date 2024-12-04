@@ -184,9 +184,19 @@ def update_dashboard(start_clicks, next_clicks, prev_clicks, race_id):
     elif "prev-lap-btn" in triggered and current_lap > 1:
         current_lap -= 1
 
-    min_heap_runtime = run_cpp_program(race_id, current_lap)
+    # Run program and update JSON
+    run_cpp_program(race_id, current_lap)
 
+    # Load results.json
     results = load_results()
+    if not results:
+        return f"No results available for Race {race_id}, Lap {current_lap}.", [], "Runtime: N/A", [], "Runtime: N/A"
+
+    # Extract results
+    min_heap_results = results.get("minHeapResults", [])
+    bplus_tree_results = results.get("bPlusTreeResults", [])
+    min_heap_runtime = results.get("minHeapRuntime", "N/A")
+    bplus_tree_runtime = results.get("bPlusTreeRuntime", "N/A")
 
     # Min-Heap leaderboard
     min_heap_header = [
@@ -194,24 +204,29 @@ def update_dashboard(start_clicks, next_clicks, prev_clicks, race_id):
     ]
     min_heap_rows = [
         html.Tr([html.Td(idx + 1), html.Td(result["driver"]), html.Td(result["time"])])
-        for idx, result in enumerate(results[:5])  # Limit to top 5
+        for idx, result in enumerate(min_heap_results[:5])  # Limit to top 5
     ]
-    min_heap_time = f"Runtime: {min_heap_runtime}" if min_heap_runtime else "Runtime: N/A"
 
-    # B+ Tree leaderboard (needs implementation)
+    # B+ Tree leaderboard
     bplus_tree_header = [
         html.Tr([html.Th("Position"), html.Th("Driver"), html.Th("Time")])
     ]
     bplus_tree_rows = [
-        html.Tr([html.Td(idx + 1), html.Td("Placeholder Driver"), html.Td("0:00.000")])
-        for idx in range(5)  # Placeholder rows
+        html.Tr([html.Td(idx + 1), html.Td(result["driver"]), html.Td(result["time"])])
+        for idx, result in enumerate(bplus_tree_results[:5])  # Limit to top 5
     ]
-    bplus_tree_time = "Runtime: Not yet implemented"
 
     # Update dashboard
     lap_info = f"Results for Race {race_id}, Lap {current_lap}"
 
-    return lap_info, min_heap_header + min_heap_rows, min_heap_time, bplus_tree_header + bplus_tree_rows, bplus_tree_time
+    return (
+        lap_info,
+        min_heap_header + min_heap_rows,
+        f"Runtime: {min_heap_runtime} seconds",
+        bplus_tree_header + bplus_tree_rows,
+        f"Runtime: {bplus_tree_runtime} seconds"
+    )
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)

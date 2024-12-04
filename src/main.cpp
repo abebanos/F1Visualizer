@@ -164,31 +164,30 @@ void displayTop5(const string& title, const vector<LapTime>& top5, const unorder
 }
 
 // Load Results as a JSON for front end
-void writeResultsToJson(const string& filename, const vector<LapTime>& minHeapTop5, const vector<LapTime>& bPlusTreeTop5, const unordered_map<int, Driver>& drivers) {
+void writeResultsToJson(const string& filename, const vector<LapTime>& minHeapTop5, const vector<LapTime>& bPlusTreeTop5, const unordered_map<int, Driver>& drivers, double minHeapRuntime, double bPlusTreeRuntime) {
     ofstream outFile(filename);
     if (!outFile.is_open()) {
         cerr << "Error: Could not open file " << filename << "\n";
         return;
     }
-    // MinHeap results
-    outFile << "[\n";
+
+    outFile << "{\n";
+    outFile << "  \"minHeapResults\": [\n";
     for (size_t i = 0; i < minHeapTop5.size(); ++i) {
         const auto& lapTime = minHeapTop5[i];
         if (drivers.find(lapTime.driverId) != drivers.end()) {
             const auto& driver = drivers.at(lapTime.driverId);
-
-            // Write JSON object for each driver
-            outFile << "  {\n";
-            outFile << "    \"driver\": \"" << driver.forename + " " + driver.surname << "\",\n";
-            outFile << "    \"time\": \"" << lapTime.time << "\"\n";
-            outFile << "  }";
+            outFile << "    {\n";
+            outFile << "      \"driver\": \"" << driver.forename + " " + driver.surname << "\",\n";
+            outFile << "      \"time\": \"" << lapTime.time << "\"\n";
+            outFile << "    }";
             if (i != minHeapTop5.size() - 1) outFile << ",";
             outFile << "\n";
         }
     }
-    outFile << "]\n";
+    outFile << "  ],\n";
+    outFile << "  \"minHeapRuntime\": " << minHeapRuntime << ",\n";
 
-    //B+ Tree Results
     outFile << "  \"bPlusTreeResults\": [\n";
     for (size_t i = 0; i < bPlusTreeTop5.size(); ++i) {
         const auto& lapTime = bPlusTreeTop5[i];
@@ -202,18 +201,15 @@ void writeResultsToJson(const string& filename, const vector<LapTime>& minHeapTo
             outFile << "\n";
         }
     }
-    outFile << "  ]\n";
-
+    outFile << "  ],\n";
+    outFile << "  \"bPlusTreeRuntime\": " << bPlusTreeRuntime << "\n";
     outFile << "}\n";
 
     outFile.close();
 }
 
-
-
 // Main function
 int main(int argc, char* argv[]) {
-
     if (argc != 3) {
         cerr << "Usage: main.exe <Race ID> <Lap Number>\n";
         return 1;
@@ -237,35 +233,26 @@ int main(int argc, char* argv[]) {
     string line;
 
     while (getline(file, line)) {
-        if (line.empty()) {
-            cerr << "Skipping empty line.\n";
-            continue; // Skip empty lines
-        }
-
-        if (line == "raceId,driverId,lap,position,time,milliseconds") {
-            continue; // Skip header row
+        if (line.empty() || line == "raceId,driverId,lap,position,time,milliseconds") {
+            continue;
         }
 
         auto tokens = split(line, ',');
         if (tokens.size() != 6) {
-            cerr << "Unexpected number of tokens in line: " << line << "\n";
-            continue; // Skip malformed lines
+            continue;
         }
 
         try {
-            // Validate and convert each token
             int raceId = stoi(tokens[0]);
             int driverId = stoi(tokens[1]);
             int lap = stoi(tokens[2]);
             int milliseconds = stoi(tokens[5]);
 
             if (raceId == selectedRaceId && lap == selectedLap) {
-                // cout << "Inserting driverId " << driverId << " with time " << tokens[4] << "\n"; Insertion debugging
                 string time = stripQuotes(tokens[4]);
                 minHeap.insert({driverId, time, milliseconds});
             }
-        } catch (const exception& e) {
-            cerr << "Error processing line: " << line << " - " << e.what() << "\n";
+        } catch (...) {
             continue;
         }
     }
@@ -282,6 +269,7 @@ int main(int argc, char* argv[]) {
     file.clear();
     file.seekg(0);
 
+    auto startBPlusTree = chrono::high_resolution_clock::now();
     while (getline(file, line)) {
         if (line.empty() || line == "raceId,driverId,lap,position,time,milliseconds") {
             continue;
@@ -302,17 +290,14 @@ int main(int argc, char* argv[]) {
                 string time = stripQuotes(tokens[4]);
                 bPlusTree.insert({driverId, time, milliseconds});
             }
-        } catch (const exception& e) {
-            cerr << "Error processing line: " << line << " - " << e.what() << "\n";
+        } catch (...) {
             continue;
         }
     }
 
-    auto startBPlusTree = chrono::high_resolution_clock::now(); // Start timer for B+ Tree
-    vector<LapTime> bPlusTreeTop5 = bPlusTree.getTopK(5);       // Retrieve top 5 lap times from B+ Tree
+    vector<LapTime> bPlusTreeTop5 = bPlusTree.getTopK(5); // Retrieve top 5 lap times from B+ Tree
     auto endBPlusTree = chrono::high_resolution_clock::now();   // End timer for B+ Tree
     chrono::duration<double> durationBPlusTree = endBPlusTree - startBPlusTree; // Calculate duration
-
 
     // Display results
     displayTop5("Min-Heap Results", top5MinHeap, drivers);
@@ -322,7 +307,7 @@ int main(int argc, char* argv[]) {
     cout << "\nB+ Tree Build & Query Runtime: " << durationBPlusTree.count() << " seconds\n";
 
     // Write results
-    writeResultsToJson("results.json", top5MinHeap, bPlusTreeTop5, drivers);
+    writeResultsToJson("results.json", top5MinHeap, bPlusTreeTop5, drivers, durationMinHeap.count(), durationBPlusTree.count());
 
     return 0;
 }
