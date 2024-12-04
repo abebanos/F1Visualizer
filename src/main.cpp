@@ -140,24 +140,54 @@ void displayTop5(const string& title, const vector<LapTime>& top5, const unorder
     }
 }
 
+// Load Results as a JSON for front end
+void writeResultsToJson(const string& filename, const vector<LapTime>& top5, const unordered_map<int, Driver>& drivers) {
+    ofstream outFile(filename);
+    if (!outFile.is_open()) {
+        cerr << "Error: Could not open file " << filename << "\n";
+        return;
+    }
+
+    outFile << "[\n";
+    for (size_t i = 0; i < top5.size(); ++i) {
+        const auto& lapTime = top5[i];
+        if (drivers.find(lapTime.driverId) != drivers.end()) {
+            const auto& driver = drivers.at(lapTime.driverId);
+
+            // Write JSON object for each driver
+            outFile << "  {\n";
+            outFile << "    \"driver\": \"" << driver.forename + " " + driver.surname << "\",\n";
+            outFile << "    \"time\": \"" << lapTime.time << "\"\n";
+            outFile << "  }";
+            if (i != top5.size() - 1) outFile << ",";
+            outFile << "\n";
+        }
+    }
+    outFile << "]\n";
+
+    outFile.close();
+}
+
 
 
 // Main function
-int main() {
+int main(int argc, char* argv[]) {
+
+    if (argc != 3) {
+        cerr << "Usage: main.exe <Race ID> <Lap Number>\n";
+        return 1;
+    }
+
+    int selectedRaceId = stoi(argv[1]);
+    int selectedLap = stoi(argv[2]);
+
     // File paths
-    const string driversFile = "csvFiles/drivers.csv";
-    const string lapTimesFile = "csvFiles/lap_times.csv";
+    const string driversFile = "data/drivers.csv";
+    const string lapTimesFile = "data/lap_times.csv";
 
     // Load drivers
     unordered_map<int, Driver> drivers;
     loadDrivers(driversFile, drivers);
-
-    // User input
-    int selectedRaceId, selectedLap;
-    cout << "Enter Race ID: ";
-    cin >> selectedRaceId;
-    cout << "Enter Lap Number: ";
-    cin >> selectedLap;
 
     // Min-Heap approach
     MinHeap minHeap;
@@ -210,6 +240,9 @@ int main() {
     // Display results
     displayTop5("Min-Heap Results", top5MinHeap, drivers);
     cout << "\nMin-Heap Build & Query Runtime: " << durationMinHeap.count() << " seconds\n";
+
+    // Write results
+    writeResultsToJson("results.json", top5MinHeap, drivers);
 
     return 0;
 }
