@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <chrono>
 #include <iomanip>
+#include <map>
 using namespace std;
 
 // Store driver information
@@ -70,6 +71,28 @@ public:
 
     bool isEmpty() const {
         return heap.empty();
+    }
+};
+
+// Custom B+ Tree implementation using multimap (simplified)
+class BPlusTree {
+    multimap<int, LapTime> tree;
+
+public:
+    void insert(const LapTime& lapTime) {
+        tree.insert({lapTime.milliseconds, lapTime});
+    }
+
+    vector<LapTime> getTopK(int k) {
+        vector<LapTime> topK;
+        for (auto it = tree.begin(); it != tree.end() && k > 0; ++it, --k) {
+            topK.push_back(it->second);
+        }
+        return topK;
+    }
+
+    bool isEmpty() const {
+        return tree.empty();
     }
 };
 
@@ -141,16 +164,16 @@ void displayTop5(const string& title, const vector<LapTime>& top5, const unorder
 }
 
 // Load Results as a JSON for front end
-void writeResultsToJson(const string& filename, const vector<LapTime>& top5, const unordered_map<int, Driver>& drivers) {
+void writeResultsToJson(const string& filename, const vector<LapTime>& minHeapTop5, const vector<LapTime>& bPlusTreeTop5, const unordered_map<int, Driver>& drivers) {
     ofstream outFile(filename);
     if (!outFile.is_open()) {
         cerr << "Error: Could not open file " << filename << "\n";
         return;
     }
-
+    // MinHeap results
     outFile << "[\n";
-    for (size_t i = 0; i < top5.size(); ++i) {
-        const auto& lapTime = top5[i];
+    for (size_t i = 0; i < minHeapTop5.size(); ++i) {
+        const auto& lapTime = minHeapTop5[i];
         if (drivers.find(lapTime.driverId) != drivers.end()) {
             const auto& driver = drivers.at(lapTime.driverId);
 
@@ -159,11 +182,29 @@ void writeResultsToJson(const string& filename, const vector<LapTime>& top5, con
             outFile << "    \"driver\": \"" << driver.forename + " " + driver.surname << "\",\n";
             outFile << "    \"time\": \"" << lapTime.time << "\"\n";
             outFile << "  }";
-            if (i != top5.size() - 1) outFile << ",";
+            if (i != minHeapTop5.size() - 1) outFile << ",";
             outFile << "\n";
         }
     }
     outFile << "]\n";
+
+    //B+ Tree Results
+    outFile << "  \"bPlusTreeResults\": [\n";
+    for (size_t i = 0; i < bPlusTreeTop5.size(); ++i) {
+        const auto& lapTime = bPlusTreeTop5[i];
+        if (drivers.find(lapTime.driverId) != drivers.end()) {
+            const auto& driver = drivers.at(lapTime.driverId);
+            outFile << "    {\n";
+            outFile << "      \"driver\": \"" << driver.forename + " " + driver.surname << "\",\n";
+            outFile << "      \"time\": \"" << lapTime.time << "\"\n";
+            outFile << "    }";
+            if (i != bPlusTreeTop5.size() - 1) outFile << ",";
+            outFile << "\n";
+        }
+    }
+    outFile << "  ]\n";
+
+    outFile << "}\n";
 
     outFile.close();
 }
@@ -236,13 +277,52 @@ int main(int argc, char* argv[]) {
     auto endMinHeap = chrono::high_resolution_clock::now();
     chrono::duration<double> durationMinHeap = endMinHeap - startMinHeap;
 
+    // B+ Tree Approach
+    BPlusTree bPlusTree;
+    file.clear();
+    file.seekg(0);
+
+    while (getline(file, line)) {
+        if (line.empty() || line == "raceId,driverId,lap,position,time,milliseconds") {
+            continue;
+        }
+
+        auto tokens = split(line, ',');
+        if (tokens.size() != 6) {
+            continue;
+        }
+
+        try {
+            int raceId = stoi(tokens[0]);
+            int driverId = stoi(tokens[1]);
+            int lap = stoi(tokens[2]);
+            int milliseconds = stoi(tokens[5]);
+
+            if (raceId == selectedRaceId && lap == selectedLap) {
+                string time = stripQuotes(tokens[4]);
+                bPlusTree.insert({driverId, time, milliseconds});
+            }
+        } catch (const exception& e) {
+            cerr << "Error processing line: " << line << " - " << e.what() << "\n";
+            continue;
+        }
+    }
+
+    auto startBPlusTree = chrono::high_resolution_clock::now(); // Start timer for B+ Tree
+    vector<LapTime> bPlusTreeTop5 = bPlusTree.getTopK(5);       // Retrieve top 5 lap times from B+ Tree
+    auto endBPlusTree = chrono::high_resolution_clock::now();   // End timer for B+ Tree
+    chrono::duration<double> durationBPlusTree = endBPlusTree - startBPlusTree; // Calculate duration
+
 
     // Display results
     displayTop5("Min-Heap Results", top5MinHeap, drivers);
     cout << "\nMin-Heap Build & Query Runtime: " << durationMinHeap.count() << " seconds\n";
 
+    displayTop5("B+ Tree Results", bPlusTreeTop5, drivers);
+    cout << "\nB+ Tree Build & Query Runtime: " << durationBPlusTree.count() << " seconds\n";
+
     // Write results
-    writeResultsToJson("results.json", top5MinHeap, drivers);
+    writeResultsToJson("results.json", top5MinHeap, bPlusTreeTop5, drivers);
 
     return 0;
 }
