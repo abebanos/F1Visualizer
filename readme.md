@@ -23,6 +23,23 @@ cd F1Visualizer
 
 ### 2. **Set Up the Python Environment**
 
+If Python 3.13 is not installed, download and install it from the official Python website or use the following commands based on your operating system:
+
+Windows:
+
+Open Command Prompt as Administrator.
+
+Run the following command to update Python:
+
+```bash
+python -m ensurepip --upgrade
+python -m pip install --upgrade python==3.13
+```
+
+If not installed, download the installer from the Python website.
+
+Run the installer and ensure you check the option to add Python to PATH.
+
 #### Create a virtual environment:
 ```bash
 python -m venv venv
@@ -44,7 +61,6 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-
 
 #### Ensure the executable `F1Visualizer.exe` is located in the `cmake-build-debug` directory.
 
@@ -75,3 +91,4 @@ This link may be different for you
 The top 5 drivers for the selected race and lap are displayed for:
 - Min-Heap Approach.
 - B+ Tree Approach.
+
