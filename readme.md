@@ -45,29 +45,11 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 3. **Build the C++ Executable**
-
-#### Navigate to the project directory:
-```bash
-cd cmake-build-debug
-```
-
-#### Build the project using CMake:
-```bash
-cmake ..
-cmake --build .
-```
 
 #### Ensure the executable `F1Visualizer.exe` is located in the `cmake-build-debug` directory.
 
-### 4. **Prepare Data Files**
-Ensure the `data` directory contains the following files:
-- `drivers.csv`
-- `lap_times.csv`
 
-The `data` directory should be inside the `cmake-build-debug` folder.
-
-### 5. **Running the Application**
+### 3. **Running the Application**
 
 #### Start the Python Dash app:
 ```bash
@@ -77,6 +59,7 @@ python dash_app.py
 #### Open your browser and navigate to the provided link:
 ```
 http://127.0.0.1:8050/
+This link may be different for you
 ```
 
 ### **Usage**
