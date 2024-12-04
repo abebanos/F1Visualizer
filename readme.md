@@ -17,7 +17,7 @@ Visualizes Formula 1 race data using Min-Heap and B+ Tree approaches. The app is
 
 ### 1. **Clone the Repository**
 ```bash
-git clone https://github.com/your_username/F1Visualizer.git
+git clone https://github.com/abebanos/F1Visualizer.git
 cd F1Visualizer
 ```
 
