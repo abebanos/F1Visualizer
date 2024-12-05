@@ -2,6 +2,8 @@
 
 Visualizes Formula 1 race data using Min-Heap and B+ Tree approaches. The app is powered by a Dash frontend and a C++ backend.
 
+*Unfortunately our program only works on windows*
+
 ---
 
 ## **Features**
